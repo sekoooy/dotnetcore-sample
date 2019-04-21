@@ -1,0 +1,136 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        .column {
+            float: left;
+            width: 50%;
+            padding: 10px;
+        }
+
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+    </style>
+    <title></title>
+</head>
+<body>
+    <div class="row">
+        <div class="column">
+            <button onclick="loadSendDataSection()">Send Data</button>
+        </div>
+        <div class="column">
+            <button onclick="loadGetDataSection()">Get Data</button>
+        </div>
+    </div>
+    <script>
+        var refreshInterval;
+
+        function clearBody() {
+            document.body.innerHTML = '';
+        }
+
+        function loadGetDataSection() {
+            clearBody();
+            var body = document.body;
+
+            var pinTextBox = document.createElement('input');
+            pinTextBox.id = 'pinTextBox';
+            pinTextBox.type = "text";
+            pinTextBox.onkeydown = function (event) {
+                if (event.keyCode == 13) {
+                    getData(pinTextBox.value, dataDiv);
+                }
+            };
+            body.appendChild(pinTextBox);
+
+            var getDataButton = document.createElement('button');
+            getDataButton.innerText = 'Get Data';
+            getDataButton.onclick = function () {
+                getData(pinTextBox.value, dataDiv);
+            }
+            body.appendChild(getDataButton);
+
+            var dataDiv = document.createElement('div');
+            dataDiv.id = 'dataDiv';
+            body.appendChild(dataDiv);
+        }
+
+        function getData(pin, dataDiv) {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+            refreshInterval = setInterval(getDataTimer, 1000);
+
+            function getDataTimer() {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        var responseArray = JSON.parse(this.responseText);
+                        dataDiv.innerHTML = "";
+                        for (var i = 0; i < responseArray.length; i++) {
+                            var response = document.createElement('div');
+                            response.innerHTML = responseArray[i];
+                            dataDiv.appendChild(response);
+                        }
+                    }
+                };
+                xhttp.open('GET', window.location.href + 'api/datatransfer/' + pin, true);
+                xhttp.send();
+            }
+        }
+
+        function loadSendDataSection() {
+            clearBody();
+            var body = document.body;
+
+            var sendDataDiv = document.createElement('div');
+            sendDataDiv.id = 'pin';
+            var pin = Math.random().toString().substr(2, 4);
+            sendDataDiv.innerText = 'Pin: ' + pin;
+            body.appendChild(sendDataDiv);
+
+            var sendDataTextBox = document.createElement('input');
+            sendDataTextBox.type = 'text';
+            sendDataTextBox.onkeydown = function (event) {
+                if (event.keyCode == 13) {
+                    postData(pin, sendDataTextBox.value);
+                    sendDataTextBox.value = '';
+                }
+            };
+            body.appendChild(sendDataTextBox);
+
+            var sendDataButton = document.createElement('button');
+            sendDataButton.innerText = 'Send';
+            sendDataButton.onclick = function () {
+                postData(pin, sendDataTextBox.value);
+                    sendDataTextBox.value = '';
+            }
+            body.appendChild(sendDataButton);
+        }
+
+        function postData(key, value) {
+            var http = new XMLHttpRequest();
+            var url = window.location.href + 'api/datatransfer/';
+            var params = JSON.stringify({
+                'key': key,
+                'value': value
+            });
+
+            http.open('POST', url, true);
+            http.setRequestHeader('Content-type', 'application/json');
+
+            http.send(params);
+        }
+
+    </script>
+
+</body>
+</html>
